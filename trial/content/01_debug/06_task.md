@@ -153,3 +153,147 @@ class Matrix:
 ## Текст успешного прохождения
 
 Поздравляем! Скрипт летает, коллега-аналитик счастлив, пользователи легко находят хорошее кино на вечер.
+
+## Тесты
+
+```python
+import threading
+
+def test_add_item_empty_matrix():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+
+    expected = '1 None\nNone None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_add_item_extend_non_empty_matrix():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+    matrix.add_item(2)
+    matrix.add_item(3)
+
+    expected = '1 2 3\nNone None None\nNone None None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_add_item_none_value():
+    matrix = Matrix()
+
+    try:
+        matrix.add_item(None)
+    except ValueError:
+        assert True
+        return
+    assert False, 'Expected ValueError, when None value added'
+
+def test_add_item_without_resize():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+
+    expected = '1 1 1\n1 None None\nNone None None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_pop_size_1():
+    matrix = Matrix()
+
+    try:
+        matrix.pop()
+    except IndexError:
+        assert True
+        return
+    assert False, 'Expected IndexError, when pop() on empty matrix'
+
+def test_pop_with_resize():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+    matrix.add_item(2)
+    matrix.add_item(3)
+
+    matrix.pop()
+
+    expected = '1 2\nNone None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_pop_without_resize():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+
+    matrix.pop()
+
+    expected = '1 1 1\nNone None None\nNone None None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_pop_several_resizes():
+    matrix = Matrix()
+
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+    matrix.add_item(1)
+
+    matrix.pop()
+    matrix.pop()
+    matrix.pop()
+
+    expected = '1 None\nNone None'
+
+    assert str(matrix) == expected, f'Expected: {expected}\nActual: {str(matrix)}'
+
+def test_matrix_speed():
+    threshold_seconds = 1  # Очень сильно зависит от платформы (нашли эмпирическим путем)
+    signal = threading.Event()
+    stop_event = threading.Event()
+
+    def inner():
+        size = 100
+        operations = 100_000
+        matrix = Matrix()
+
+        for i in range(1, size ** 2 - 1):
+            matrix.add_item(i)
+
+        for _ in range(operations):
+            if stop_event.is_set():
+                return
+            item = matrix.pop()
+            matrix.add_item(item)
+
+        signal.set()
+
+    thread = threading.Thread(target=inner)
+    thread.start()
+
+    thread.join(timeout=threshold_seconds)
+    if not signal.is_set():
+        stop_event.set()
+        assert False, 'Код работает медленно'
+        return
+
+def main():
+    test_add_item_empty_matrix()
+    test_add_item_extend_non_empty_matrix()
+    test_add_item_none_value()
+    test_add_item_without_resize()
+    test_pop_size_1()
+    test_pop_with_resize()
+    test_pop_without_resize()
+    test_pop_several_resizes()
+    test_matrix_speed()
+
+main()
+```
